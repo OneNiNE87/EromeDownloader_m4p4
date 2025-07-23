@@ -21,15 +21,28 @@ if not exist env\Scripts\activate.bat (
     %PYEXE% -m venv env
 )
 
-REM --- Install pip from wheel if not present ---
-if not exist env\Scripts\pip.exe (
-    echo Installing pip from wheel...
-    env\Scripts\python.exe %PIP_WHL --no-warn-script-location
-)
+REM --- Set PATH to use venv Scripts first ---
+set "PATH=%CD%\env\Scripts;%PATH%"
 
 REM --- Activate the venv ---
 echo Activating virtual environment...
 call env\Scripts\activate.bat
+
+REM --- Ensure pip is installed in the venv ---
+if not exist env\Scripts\pip.exe (
+    echo Bootstrapping pip in the virtual environment...
+    "%CD%\env\Scripts\python.exe" -m ensurepip --upgrade
+    REM Check again if pip exists
+    if not exist env\Scripts\pip.exe (
+        echo ensurepip failed, trying to install pip from wheel directly...
+        "%CD%\env\Scripts\python.exe" "%WHEEL_DIR%\pip-25.1.1-py3-none-any.whl/pip/__main__.py" install "%PIP_WHL%"
+    )
+    REM Final check
+    if not exist env\Scripts\pip.exe (
+        echo ERROR: pip could not be installed in the virtual environment!
+        exit /b 1
+    )
+)
 
 REM --- Install all wheels in wheels directory except pip ---
 echo Installing all wheels in %WHEEL_DIR% ...
@@ -37,7 +50,7 @@ for %%f in (%WHEEL_DIR%\*.whl) do (
     echo %%f | findstr /I "pip-25.1.1-py3-none-any.whl" >nul
     if errorlevel 1 (
         echo Installing %%f ...
-        python -m pip install "%%f"
+        "%CD%\env\Scripts\python.exe" -m pip install "%%f"
     )
 )
 
