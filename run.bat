@@ -55,6 +55,14 @@ if not exist env\Scripts\activate.bat (
 REM --- Activate the venv and open shell ---
 echo Activating virtual environment...
 call env\Scripts\activate.bat
+
+REM --- Install all wheels in wheels directory ---
+echo Installing all wheels in %WHEEL_DIR% ...
+for %%f in (%WHEEL_DIR%\*.whl) do (
+    echo Installing %%f ...
+    env\Scripts\python.exe -m pip install "%%f"
+)
+
 cmd
 
 endlocal
